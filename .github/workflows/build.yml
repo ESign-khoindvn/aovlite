@@ -52,12 +52,15 @@ jobs:
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          # Re-own after install script (it may create dirs as root)
+          sudo chown -R "$(id -u):$(id -g)" /opt/theos
 
       # ── 5. Download iOS 14.5 SDK ──────────────────────────────────────
       - name: Download iOS 14.5 SDK
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          mkdir -p /opt/theos/sdks
+          sudo mkdir -p /opt/theos/sdks
+          sudo chown -R "$(id -u):$(id -g)" /opt/theos/sdks
           wget -q "https://github.com/theos/sdks/releases/download/2023-07-21/iPhoneOS14.5.sdk.tar.xz" \
                -O /tmp/iPhoneOS14.5.sdk.tar.xz
           tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C /opt/theos/sdks
