@@ -1,7 +1,6 @@
 #import "PubgLoad.h"
 #import <UIKit/UIKit.h>
 #import <CoreFoundation/CoreFoundation.h>
-#import "../libAuth/Auth.h"
 #import "../helper/Obfuscatee.h"
 
 #import "JHPP.h"
