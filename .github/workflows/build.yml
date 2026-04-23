@@ -12,10 +12,6 @@ jobs:
     name: 🔨 Theos Build
     runs-on: ubuntu-latest
 
-    env:
-      THEOS: /home/runner/theos
-      THEOS_MAKE_PATH: /home/runner/theos/makefiles
-
     steps:
       # ── 1. Checkout ───────────────────────────────────────────────────
       - name: Checkout repository
@@ -23,46 +19,26 @@ jobs:
         with:
           submodules: recursive
 
-      # ── 2. Cache Theos + SDKs ─────────────────────────────────────────
-      - name: Cache Theos
-        id: cache-theos
-        uses: actions/cache@v4
+      # ── 2. Setup Theos (toolchain + SDK + everything) ─────────────────
+      - name: Setup Theos
+        uses: Randomblock1/theos-action@v1
         with:
-          path: /home/runner/theos
-          key: theos-linux-v4
+          theos-sdks-url: "https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz"
 
-      # ── 3. Install system dependencies ───────────────────────────────
+      # ── 3. Install extra system deps ──────────────────────────────────
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            git curl wget unzip zip \
-            make clang llvm \
-            libssl-dev libz-dev \
-            fakeroot dpkg
+            fakeroot dpkg \
+            libssl-dev libz-dev
 
-      # ── 4. Clone Theos directly (skip install-theos script) ──────────
-      - name: Clone Theos
-        if: steps.cache-theos.outputs.cache-hit != 'true'
-        run: |
-          git clone --recursive https://github.com/theos/theos.git $THEOS
-          mkdir -p $THEOS/sdks
-
-      # ── 5. Download iOS 14.5 SDK ──────────────────────────────────────
-      - name: Download iOS 14.5 SDK
-        if: steps.cache-theos.outputs.cache-hit != 'true'
-        run: |
-          curl -fL "https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz" \
-               -o /tmp/iPhoneOS14.5.sdk.tar.xz
-          tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C $THEOS/sdks
-          rm /tmp/iPhoneOS14.5.sdk.tar.xz
-
-      # ── 6. Build ──────────────────────────────────────────────────────
+      # ── 4. Build ──────────────────────────────────────────────────────
       - name: Build package
         run: |
           make package FINALPACKAGE=1 ARCHS=arm64 2>&1
 
-      # ── 7. Upload artifacts ───────────────────────────────────────────
+      # ── 5. Upload DEB artifact ────────────────────────────────────────
       - name: Upload DEB package
         uses: actions/upload-artifact@v4
         with:
@@ -70,7 +46,7 @@ jobs:
           path: packages/*.deb
           if-no-files-found: warn
 
-      # ── 8. Create GitHub Release on version tags ───────────────────────
+      # ── 6. Create GitHub Release on version tags ───────────────────────
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
