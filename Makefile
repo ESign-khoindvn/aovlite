@@ -14,7 +14,7 @@ LOAD_SRC = $(wildcard load/*.mm) $(wildcard load/*.m)
 
 $(FRAMEWORK_NAME)_FRAMEWORKS =  UIKit SafariServices Accelerate Foundation QuartzCore CoreGraphics AudioToolbox CoreText Metal MobileCoreServices Security SystemConfiguration IOKit CoreTelephony CoreImage CFNetwork AdSupport AVFoundation
 
-$(FRAMEWORK_NAME)_LDFLAGS +=  -lresolv -lz -liconv hook/Ryoma.a libAuth/Auth.a
+$(FRAMEWORK_NAME)_LDFLAGS +=  -lresolv -lz -liconv hook/Ryoma.a
 
 $(FRAMEWORK_NAME)_CCFLAGS = -std=c++17 -fno-rtti -fno-exceptions -DNDEBUG -Wall -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-value -Wno-unused-function -fvisibility=hidden -fexceptions
 
