@@ -39,8 +39,7 @@ jobs:
             git curl wget unzip zip \
             make clang llvm \
             libssl-dev libz-dev \
-            fakeroot dpkg \
-            libtinfo5 libncurses5
+            fakeroot dpkg
 
       # ── 4. Clone Theos directly (skip install-theos script) ──────────
       - name: Clone Theos
