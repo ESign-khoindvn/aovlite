@@ -1,0 +1,82 @@
+name: Build IPA / DEB
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 🔨 Theos Build
+    runs-on: ubuntu-latest
+
+    env:
+      THEOS: /opt/theos
+      THEOS_MAKE_PATH: /opt/theos/makefiles
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ── 2. Cache Theos + SDKs ─────────────────────────────────────────
+      - name: Cache Theos
+        id: cache-theos
+        uses: actions/cache@v4
+        with:
+          path: /opt/theos
+          key: theos-${{ runner.os }}-v1
+
+      # ── 3. Install dependencies ───────────────────────────────────────
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git curl wget unzip zip \
+            make clang llvm \
+            libssl-dev libz-dev \
+            fakeroot dpkg
+
+      # ── 4. Install Theos (only if not cached) ─────────────────────────
+      - name: Install Theos
+        if: steps.cache-theos.outputs.cache-hit != 'true'
+        run: |
+          sudo mkdir -p /opt/theos
+          sudo chown "$(id -u):$(id -g)" /opt/theos
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+
+      # ── 5. Download iOS 14.5 SDK ──────────────────────────────────────
+      - name: Download iOS 14.5 SDK
+        if: steps.cache-theos.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /opt/theos/sdks
+          wget -q "https://github.com/theos/sdks/releases/download/2023-07-21/iPhoneOS14.5.sdk.tar.xz" \
+               -O /tmp/iPhoneOS14.5.sdk.tar.xz
+          tar -xf /tmp/iPhoneOS14.5.sdk.tar.xz -C /opt/theos/sdks
+
+      # ── 6. Build ──────────────────────────────────────────────────────
+      - name: Build package
+        run: |
+          make package FINALPACKAGE=1 ARCHS=arm64 2>&1
+
+      # ── 7. Upload artifacts ───────────────────────────────────────────
+      - name: Upload DEB package
+        uses: actions/upload-artifact@v4
+        with:
+          name: AovcheatLite-deb-${{ github.sha }}
+          path: packages/*.deb
+          if-no-files-found: warn
+
+      # ── 8. Create GitHub Release on version tags ───────────────────────
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*.deb
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
