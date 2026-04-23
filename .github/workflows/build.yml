@@ -52,8 +52,8 @@ jobs:
       - name: Download iOS 14.5 SDK
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          wget -q "https://github.com/theos/sdks/releases/download/2023-07-21/iPhoneOS14.5.sdk.tar.xz" \
-               -O /tmp/iPhoneOS14.5.sdk.tar.xz
+          curl -fL "https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz" \
+               -o /tmp/iPhoneOS14.5.sdk.tar.xz
           tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C $THEOS/sdks
           rm /tmp/iPhoneOS14.5.sdk.tar.xz
 
