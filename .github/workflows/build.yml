@@ -29,7 +29,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /opt/theos
-          key: theos-${{ runner.os }}-v1
+          key: theos-${{ runner.os }}-v2
+
+      # Fix permissions after cache restore (cache may be owned by root)
+      - name: Fix /opt/theos permissions
+        run: |
+          sudo mkdir -p /opt/theos
+          sudo chown -R "$(id -u):$(id -g)" /opt/theos
 
       # ── 3. Install dependencies ───────────────────────────────────────
       - name: Install build dependencies
@@ -45,8 +51,6 @@ jobs:
       - name: Install Theos
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          sudo mkdir -p /opt/theos
-          sudo chown "$(id -u):$(id -g)" /opt/theos
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
 
       # ── 5. Download iOS 14.5 SDK ──────────────────────────────────────
@@ -56,7 +60,8 @@ jobs:
           mkdir -p /opt/theos/sdks
           wget -q "https://github.com/theos/sdks/releases/download/2023-07-21/iPhoneOS14.5.sdk.tar.xz" \
                -O /tmp/iPhoneOS14.5.sdk.tar.xz
-          tar -xf /tmp/iPhoneOS14.5.sdk.tar.xz -C /opt/theos/sdks
+          tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C /opt/theos/sdks
+          rm /tmp/iPhoneOS14.5.sdk.tar.xz
 
       # ── 6. Build ──────────────────────────────────────────────────────
       - name: Build package
