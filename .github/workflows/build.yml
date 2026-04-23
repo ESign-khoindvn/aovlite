@@ -13,8 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      THEOS: /opt/theos
-      THEOS_MAKE_PATH: /opt/theos/makefiles
+      # Use home dir – no sudo needed at all
+      THEOS: /home/runner/theos
+      THEOS_MAKE_PATH: /home/runner/theos/makefiles
 
     steps:
       # ── 1. Checkout ───────────────────────────────────────────────────
@@ -28,16 +29,10 @@ jobs:
         id: cache-theos
         uses: actions/cache@v4
         with:
-          path: /opt/theos
-          key: theos-${{ runner.os }}-v2
+          path: /home/runner/theos
+          key: theos-${{ runner.os }}-v3
 
-      # Fix permissions after cache restore (cache may be owned by root)
-      - name: Fix /opt/theos permissions
-        run: |
-          sudo mkdir -p /opt/theos
-          sudo chown -R "$(id -u):$(id -g)" /opt/theos
-
-      # ── 3. Install dependencies ───────────────────────────────────────
+      # ── 3. Install system dependencies ───────────────────────────────
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
@@ -52,18 +47,15 @@ jobs:
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-          # Re-own after install script (it may create dirs as root)
-          sudo chown -R "$(id -u):$(id -g)" /opt/theos
 
       # ── 5. Download iOS 14.5 SDK ──────────────────────────────────────
       - name: Download iOS 14.5 SDK
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          sudo mkdir -p /opt/theos/sdks
-          sudo chown -R "$(id -u):$(id -g)" /opt/theos/sdks
+          mkdir -p /home/runner/theos/sdks
           wget -q "https://github.com/theos/sdks/releases/download/2023-07-21/iPhoneOS14.5.sdk.tar.xz" \
                -O /tmp/iPhoneOS14.5.sdk.tar.xz
-          tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C /opt/theos/sdks
+          tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C /home/runner/theos/sdks
           rm /tmp/iPhoneOS14.5.sdk.tar.xz
 
       # ── 6. Build ──────────────────────────────────────────────────────
