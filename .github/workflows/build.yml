@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Use home dir – no sudo needed at all
       THEOS: /home/runner/theos
       THEOS_MAKE_PATH: /home/runner/theos/makefiles
 
@@ -30,7 +29,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/theos
-          key: theos-${{ runner.os }}-v3
+          key: theos-linux-v4
 
       # ── 3. Install system dependencies ───────────────────────────────
       - name: Install build dependencies
@@ -40,22 +39,23 @@ jobs:
             git curl wget unzip zip \
             make clang llvm \
             libssl-dev libz-dev \
-            fakeroot dpkg
+            fakeroot dpkg \
+            libtinfo5 libncurses5
 
-      # ── 4. Install Theos (only if not cached) ─────────────────────────
-      - name: Install Theos
+      # ── 4. Clone Theos directly (skip install-theos script) ──────────
+      - name: Clone Theos
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          mkdir -p $THEOS/sdks
 
       # ── 5. Download iOS 14.5 SDK ──────────────────────────────────────
       - name: Download iOS 14.5 SDK
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          mkdir -p /home/runner/theos/sdks
           wget -q "https://github.com/theos/sdks/releases/download/2023-07-21/iPhoneOS14.5.sdk.tar.xz" \
                -O /tmp/iPhoneOS14.5.sdk.tar.xz
-          tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C /home/runner/theos/sdks
+          tar -xJf /tmp/iPhoneOS14.5.sdk.tar.xz -C $THEOS/sdks
           rm /tmp/iPhoneOS14.5.sdk.tar.xz
 
       # ── 6. Build ──────────────────────────────────────────────────────
